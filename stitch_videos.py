@@ -157,9 +157,6 @@ def stitch_videos(input_dir, output_file, check_compatibility=True, numbered=Fal
         for idx, src in enumerate(video_files, start=1):
             dst = os.path.join(temp_dir, f"processed_{idx:05d}.mp4")
             
-            # Calculate the actual position number for display
-            display_number = start_index + idx if (position is not None or number is not None) else idx
-
             # Build the mandatory 4:3 filter (scale -> crop -> pad)
             vf_parts = [
                 f"scale=-1:{target_h}",
@@ -169,8 +166,12 @@ def stitch_videos(input_dir, output_file, check_compatibility=True, numbered=Fal
 
             # Optional numbering overlay
             if numbered:
+                # Use the filename (without path) as overlay text
+                label_text = os.path.basename(src)
+                # Escape characters that ffmpeg drawtext would interpret
+                label_text = label_text.replace(':', '\\:').replace("'", "\\'")
                 vf_parts.append(
-                    f"drawtext=text={display_number}:fontcolor=black:fontsize=48:box=1:boxcolor=white@1:boxborderw=20:x=20:y=20"
+                    f"drawtext=text='{label_text}':fontcolor=black:fontsize=24:box=1:boxcolor=white@1:boxborderw=10:x=20:y=20"
                 )
 
             vf_filter = ",".join(vf_parts)
@@ -271,8 +272,8 @@ def main():
                        help='Skip compatibility check')
     # Always convert to 4:3 so no flag for this any more. The user can still
     # choose a target resolution provided it is 4:3.
-    parser.add_argument('--resolution', default='1280x960',
-                       help="Resolution for 4:3 output in WIDTHxHEIGHT format (default: 1280x960)")
+    parser.add_argument('--resolution', default='682x512',
+                       help="Resolution for output in WIDTHxHEIGHT format (default: 682x512; height 512 with 4:3 aspect)")
 
     # Optional flag to overlay the clip number in the bottom-left corner of
     # each video.
