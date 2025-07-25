@@ -315,6 +315,19 @@ def main():
         print("❌ Invalid --resolution format. Use WIDTHxHEIGHT (e.g., 1280x960)")
         sys.exit(1)
 
+    # Generate dynamic output filename if using default and position/number are specified
+    if args.output == 'stitched_video.mp4' and (args.position is not None or args.number is not None):
+        filename_parts = ['stitched-video']
+        
+        if args.position is not None:
+            filename_parts.append(f'position-{args.position}')
+        
+        if args.number is not None:
+            filename_parts.append(f'number-{args.number}')
+        
+        args.output = '_'.join(filename_parts) + '.mp4'
+        print(f"📝 Auto-generated output filename: {args.output}")
+
     # Run the stitching process
     success = stitch_videos(
         input_dir=input_dir,
