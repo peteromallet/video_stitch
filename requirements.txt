@@ -1,0 +1,14 @@
+# Video Stitching Script Requirements
+# 
+# This script uses only Python standard library modules:
+# - os, sys, subprocess, argparse, glob, pathlib, tempfile, time
+# 
+# External dependency:
+# - ffmpeg (must be installed separately and available in PATH)
+#
+# To install ffmpeg:
+# - macOS: brew install ffmpeg
+# - Ubuntu/Debian: sudo apt install ffmpeg  
+# - Windows: Download from https://ffmpeg.org/
+#
+# No Python packages need to be installed via pip. 
