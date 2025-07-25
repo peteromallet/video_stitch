@@ -64,7 +64,7 @@ def get_video_info(video_file):
     except subprocess.CalledProcessError:
         return False
 
-def stitch_videos(input_dir, output_file, check_compatibility=True, numbered=False, target_resolution=None):
+def stitch_videos(input_dir, output_file, check_compatibility=True, numbered=False, target_resolution=None, position=None, number=None):
     """
     Stitch multiple videos together.
     
@@ -75,6 +75,8 @@ def stitch_videos(input_dir, output_file, check_compatibility=True, numbered=Fal
         numbered: Overlay the clip index in the bottom-left corner of every
                    video when True.
         target_resolution: Optional tuple (width, height) for 4:3 output
+        position: Optional starting position in the video list (1-based)
+        number: Optional number of videos to take from the position
     """
     
     print("🎬 Video Stitching Script Started")
@@ -100,6 +102,27 @@ def stitch_videos(input_dir, output_file, check_compatibility=True, numbered=Fal
         return False
     
     print(f"📁 Found {len(video_files)} video files")
+    
+    # Apply position and number filtering if specified
+    original_count = len(video_files)
+    start_index = 0
+    
+    if position is not None:
+        if position < 1 or position > len(video_files):
+            print(f"❌ Error: Position {position} is out of range (1-{len(video_files)})")
+            return False
+        start_index = position - 1  # Convert to 0-based index
+        
+    if position is not None or number is not None:
+        # Default to all remaining videos if number not specified
+        if number is None:
+            video_files = video_files[start_index:]
+        else:
+            end_index = min(start_index + number, len(video_files))
+            video_files = video_files[start_index:end_index]
+        
+        print(f"📍 Selected videos {position} to {position + len(video_files) - 1} from original set")
+        print(f"📁 Processing {len(video_files)} video files")
     
     # Set default resolution if not provided
     if target_resolution is None:
@@ -133,6 +156,9 @@ def stitch_videos(input_dir, output_file, check_compatibility=True, numbered=Fal
 
         for idx, src in enumerate(video_files, start=1):
             dst = os.path.join(temp_dir, f"processed_{idx:05d}.mp4")
+            
+            # Calculate the actual position number for display
+            display_number = start_index + idx if (position is not None or number is not None) else idx
 
             # Build the mandatory 4:3 filter (scale -> crop -> pad)
             vf_parts = [
@@ -144,7 +170,7 @@ def stitch_videos(input_dir, output_file, check_compatibility=True, numbered=Fal
             # Optional numbering overlay
             if numbered:
                 vf_parts.append(
-                    f"drawtext=text={idx}:fontcolor=black:fontsize=48:box=1:boxcolor=white@1:boxborderw=20:x=20:y=20"
+                    f"drawtext=text={display_number}:fontcolor=black:fontsize=48:box=1:boxcolor=white@1:boxborderw=20:x=20:y=20"
                 )
 
             vf_filter = ",".join(vf_parts)
@@ -252,6 +278,11 @@ def main():
     # each video.
     parser.add_argument('--numbered', action='store_true',
                        help='Overlay the clip index (starting at 1) in the bottom-left corner of every video')
+    
+    parser.add_argument('--position', type=int,
+                       help='Starting position in the sorted video list (1-based index)')
+    parser.add_argument('--number', type=int,
+                       help='Number of videos to take from the position')
 
     args = parser.parse_args()
 
@@ -290,6 +321,8 @@ def main():
         output_file=args.output,
         check_compatibility=not args.no_check,
         numbered=args.numbered,
+        position=args.position,
+        number=args.number,
         target_resolution=(res_w, res_h)
     )
     
